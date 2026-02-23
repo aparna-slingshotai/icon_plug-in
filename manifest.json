@@ -1,0 +1,12 @@
+{
+  "name": "Material Symbols Stylized Icons",
+  "id": "material-symbols-stylized-icons",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["https://cdn.jsdelivr.net", "https://data.jsdelivr.com"]
+  }
+}

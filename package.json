@@ -1,0 +1,15 @@
+{
+  "name": "material-symbols-stylized-icons-plugin",
+  "version": "1.0.0",
+  "description": "Figma plugin to insert stylized Material Symbols icons",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:icons": "node build-icons.mjs",
+    "watch": "node build.mjs --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.100.0",
+    "@material-design-icons/svg": "latest",
+    "typescript": "^5.0.0"
+  }
+}

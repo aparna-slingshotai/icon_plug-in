@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 11px;
+      color: var(--figma-color-text);
+      background: var(--figma-color-bg);
+    }
+    section { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 4px; font-weight: 500; }
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--figma-color-border);
+      border-radius: 4px;
+      background: var(--figma-color-bg);
+      color: var(--figma-color-text);
+    }
+    input[type="color"] { width: 100%; height: 28px; padding: 0; border: 1px solid var(--figma-color-border); border-radius: 4px; cursor: pointer; }
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      background: var(--figma-color-bg-brand);
+      color: var(--figma-color-text-onbrand);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover { opacity: 0.9; }
+    button.secondary { background: var(--figma-color-bg-secondary); color: var(--figma-color-text); }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .row label { margin-bottom: 0; }
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      max-height: 140px;
+      overflow-y: auto;
+      padding: 4px;
+      background: var(--figma-color-bg-secondary);
+      border-radius: 6px;
+    }
+    .icon-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      background: var(--figma-color-bg);
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .icon-cell:hover { border-color: var(--figma-color-border-strong); background: var(--figma-color-bg-hover); }
+    .icon-cell.selected { border-color: var(--figma-color-bg-brand); background: var(--figma-color-bg-brand-tertiary); }
+    .icon-cell svg { width: 20px; height: 20px; fill: currentColor; stroke: currentColor; stroke-width: 0.5; }
+    .preview-wrap {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--figma-color-border);
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-wrap .preview-bg {
+      position: absolute;
+      inset: 0;
+      transition: background 0.2s;
+    }
+    .preview-wrap .preview-icon {
+      position: relative;
+      z-index: 1;
+      width: 48px;
+      height: 48px;
+    }
+    .preview-wrap .preview-icon svg { width: 100%; height: 100%; display: block; }
+    .preview-wrap .preview-icon svg path,
+    .preview-wrap .preview-icon svg circle { fill: currentColor; stroke: none; }
+    .dark-toggle {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--figma-color-border);
+      background: var(--figma-color-bg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .dark-toggle:hover { background: var(--figma-color-bg-hover); }
+    .stroke-style-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+    .stroke-style-tabs button { flex: 1; padding: 6px 8px; font-size: 10px; }
+    .stroke-style-tabs button.active { background: var(--figma-color-bg-brand); color: var(--figma-color-text-onbrand); }
+    .scale-options { display: flex; gap: 6px; }
+    .scale-options label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+    .scale-options input[type="radio"] { width: auto; }
+    .insert-row { margin-top: 12px; display: flex; justify-content: stretch; }
+    .insert-row button { flex: 1; }
+    .loading { color: var(--figma-color-text-secondary); padding: 8px; }
+    .banner {
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: var(--figma-color-bg-secondary);
+      border: 1px solid var(--figma-color-border);
+      font-size: 10px;
+      color: var(--figma-color-text-secondary);
+      margin-bottom: 10px;
+    }
+    .banner strong { color: var(--figma-color-text); }
+    .sundial-label { margin-bottom: 6px; font-weight: 500; }
+    .sundial-label small { font-weight: normal; color: var(--figma-color-text-secondary); }
+    .sundial-swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .sundial-swatch {
+      width: 28px; height: 28px; border-radius: 6px; border: 2px solid var(--figma-color-border);
+      cursor: pointer; flex-shrink: 0;
+    }
+    .sundial-swatch:hover { border-color: var(--figma-color-border-strong); }
+    .sundial-swatch.active { border-color: var(--figma-color-bg-brand); box-shadow: 0 0 0 1px var(--figma-color-bg-brand); }
+    .sundial-row { margin-bottom: 6px; }
+    .sundial-row span { font-size: 10px; color: var(--figma-color-text-secondary); display: block; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div id="limitedBanner" class="banner" style="display:none;">
+    <strong>Loading icons from Material Symbols.</strong> If the list is empty, check your network connection and try again.
+  </div>
+  <section>
+    <label>Search icons</label>
+    <input type="text" id="search" placeholder="e.g. face, home, add" />
+  </section>
+  <section>
+    <label>Icon</label>
+    <div id="iconGrid" class="icon-grid">
+      <div class="loading" id="gridLoading">Loading icons…</div>
+    </div>
+  </section>
+  <section>
+    <label>Preview</label>
+    <div class="preview-wrap" id="previewWrap">
+      <div class="preview-bg" id="previewBg"></div>
+      <button type="button" class="dark-toggle" id="darkToggle" title="Toggle light/dark">☀</button>
+      <div class="preview-icon" id="previewIcon"></div>
+    </div>
+  </section>
+  <section>
+    <label>Stroke style</label>
+    <div class="stroke-style-tabs" id="strokeStyleTabs">
+      <button type="button" data-style="basic">Clean</button>
+      <button type="button" data-style="brush_stretch">Chalk</button>
+      <button type="button" data-style="brush_scatter">Textured</button>
+    </div>
+  </section>
+  <section>
+    <label>Stroke weight</label>
+    <input type="number" id="strokeWeight" value="1.5" min="0.5" max="8" step="0.5" />
+  </section>
+  <section>
+    <label class="sundial-label">Stroke color <small>(Sundial Design System · Slingshot AI)</small></label>
+    <div id="sundialSwatchesContainer"></div>
+    <input type="color" id="strokeColor" value="#855074" />
+  </section>
+  <section>
+    <label>Size (pt)</label>
+    <div class="scale-options" id="scaleOptions">
+      <label><input type="radio" name="scale" value="12" /> 12</label>
+      <label><input type="radio" name="scale" value="16" /> 16</label>
+      <label><input type="radio" name="scale" value="20" checked /> 20</label>
+      <label><input type="radio" name="scale" value="24" /> 24</label>
+    </div>
+  </section>
+  <section class="insert-row">
+    <button type="button" id="insertBtn">Insert on canvas</button>
+  </section>
+
+  <script>
+    (function() {
+      const searchEl = document.getElementById('search');
+      const iconGrid = document.getElementById('iconGrid');
+      const gridLoading = document.getElementById('gridLoading');
+      const previewWrap = document.getElementById('previewWrap');
+      const previewBg = document.getElementById('previewBg');
+      const previewIcon = document.getElementById('previewIcon');
+      const darkToggle = document.getElementById('darkToggle');
+      const strokeStyleTabs = document.getElementById('strokeStyleTabs');
+      const strokeWeight = document.getElementById('strokeWeight');
+      const strokeColor = document.getElementById('strokeColor');
+      const scaleOptions = document.getElementById('scaleOptions');
+      const insertBtn = document.getElementById('insertBtn');
+
+      let allIconNames = [];
+      let selectedIconName = null;
+      let selectedSvg = '';
+      let darkMode = false;
+      let strokeStyle = 'basic';
+
+      const LIGHT_BG = '#ffffff';
+      const DARK_BG = '#2d2d2d';
+
+      // Sundial Design System (Slingshot AI) – one row; colors switch by light/dark mode
+      var SUNDIAL_LIGHT = { Plum: '#855074', Apricot: '#8E521F', Olive: '#5F652F', Damson: '#4D675A', Cherry: '#A24335' };
+      var SUNDIAL_DARK = { Plum: '#BE93B0', Apricot: '#D98F51', Olive: '#9DA64D', Damson: '#88A798', Cherry: '#C66051' };
+      var SUNDIAL_NAMES = ['Plum', 'Apricot', 'Olive', 'Damson', 'Cherry'];
+      var currentPresetName = 'Plum';
+
+      var container = document.getElementById('sundialSwatchesContainer');
+      function getSundialHex(name) { return darkMode ? SUNDIAL_DARK[name] : SUNDIAL_LIGHT[name]; }
+      function renderSundialSwatches() {
+        container.innerHTML = '';
+        var wrap = document.createElement('div');
+        wrap.className = 'sundial-swatches';
+        SUNDIAL_NAMES.forEach(function(name) {
+          var hex = getSundialHex(name);
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'sundial-swatch' + (strokeColor.value === hex ? ' active' : '');
+          btn.style.background = hex;
+          btn.title = name + ' (' + hex + ')';
+          btn.dataset.name = name;
+          btn.addEventListener('click', function() {
+            currentPresetName = name;
+            strokeColor.value = hex;
+            container.querySelectorAll('.sundial-swatch').forEach(function(s) { s.classList.remove('active'); });
+            btn.classList.add('active');
+            updatePreview();
+          });
+          wrap.appendChild(btn);
+        });
+        container.appendChild(wrap);
+      }
+      renderSundialSwatches();
+
+      function onStrokeColorChange() {
+        currentPresetName = null;
+        container.querySelectorAll('.sundial-swatch').forEach(function(s) {
+          s.classList.toggle('active', s.style.background === strokeColor.value);
+        });
+        updatePreview();
+      }
+
+      function send(msg) {
+        parent.postMessage({ pluginMessage: msg }, '*');
+      }
+
+      function hexToRgb(hex) {
+        const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+        return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : { r: 150, g: 135, b: 181 };
+      }
+
+      function updatePreview() {
+        previewBg.style.background = darkMode ? DARK_BG : LIGHT_BG;
+        darkToggle.textContent = darkMode ? '☀' : '☽';
+        const color = strokeColor.value;
+        previewIcon.style.color = color;
+        if (!selectedSvg) {
+          previewIcon.innerHTML = '';
+          return;
+        }
+        // Material Symbols use path fill; preview shows shape in stroke color via currentColor
+        const svgStr = selectedSvg.replace(/<svg/i, '<svg style="width:100%;height:100%;display:block"');
+        previewIcon.innerHTML = svgStr;
+      }
+
+      darkToggle.addEventListener('click', function() {
+        darkMode = !darkMode;
+        if (currentPresetName) strokeColor.value = getSundialHex(currentPresetName);
+        renderSundialSwatches();
+        updatePreview();
+      });
+
+      strokeColor.addEventListener('input', onStrokeColorChange);
+      strokeColor.addEventListener('change', onStrokeColorChange);
+
+      send({ type: 'getIconNames' });
+
+      window.onmessage = function(ev) {
+        const msg = ev.data.pluginMessage;
+        if (!msg) return;
+        if (msg.type === 'iconNames') {
+          allIconNames = msg.iconNames || [];
+          if (gridLoading.parentNode) gridLoading.remove();
+          var limitedBanner = document.getElementById('limitedBanner');
+          if (allIconNames.length === 0) {
+            limitedBanner.style.display = 'block';
+            limitedBanner.innerHTML = '<strong>No icons loaded.</strong> Check your network and try again.';
+          } else {
+            limitedBanner.style.display = 'none';
+          }
+          renderGrid(allIconNames);
+          if (allIconNames.length > 0 && !selectedIconName) {
+            selectedIconName = allIconNames[0];
+            send({ type: 'getSvg', payload: { iconName: selectedIconName } });
+          }
+        }
+        if (msg.type === 'svg') {
+          if (msg.iconName === selectedIconName) {
+            selectedSvg = msg.svg || '';
+            updatePreview();
+          }
+        }
+      };
+
+      function renderGrid(names) {
+        iconGrid.innerHTML = '';
+        names.slice(0, 100).forEach(function(name) {
+          const cell = document.createElement('div');
+          cell.className = 'icon-cell' + (name === selectedIconName ? ' selected' : '');
+          cell.dataset.name = name;
+          cell.innerHTML = '<span>' + name + '</span>';
+          cell.addEventListener('click', function() {
+            document.querySelectorAll('.icon-cell.selected').forEach(function(c) { c.classList.remove('selected'); });
+            cell.classList.add('selected');
+            selectedIconName = name;
+            send({ type: 'getSvg', payload: { iconName: name } });
+          });
+          iconGrid.appendChild(cell);
+        });
+        if (names.length > 100) {
+          const more = document.createElement('div');
+          more.className = 'loading';
+          more.style.gridColumn = '1 / -1';
+          more.textContent = 'Type in search to find more icons (' + names.length + ' total)';
+          iconGrid.appendChild(more);
+        }
+      }
+
+      function runSearch() {
+        var q = (searchEl.value || '').toLowerCase().trim();
+        var filtered = q ? allIconNames.filter(function(n) { return n.toLowerCase().indexOf(q) !== -1; }) : allIconNames;
+        renderGrid(filtered.slice(0, 100));
+      }
+      searchEl.addEventListener('input', runSearch);
+      searchEl.addEventListener('keyup', runSearch);
+
+      strokeStyleTabs.querySelectorAll('button').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          strokeStyleTabs.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          strokeStyle = btn.dataset.style;
+        });
+      });
+      strokeStyleTabs.querySelector('[data-style="basic"]').classList.add('active');
+
+      insertBtn.addEventListener('click', function() {
+        if (!selectedIconName) {
+          alert('Select an icon first.');
+          return;
+        }
+        const scaleEl = scaleOptions.querySelector('input[name="scale"]:checked');
+        const scale = scaleEl ? parseInt(scaleEl.value, 10) : 20;
+        const rgb = hexToRgb(strokeColor.value);
+        send({
+          type: 'insert',
+          payload: {
+            iconName: selectedIconName,
+            strokeWeight: parseFloat(strokeWeight.value) || 1.5,
+            strokeColor: rgb,
+            strokeAlign: 'CENTER',
+            scale: scale,
+            strokeStyle: strokeStyle,
+            brushName: strokeStyle === 'brush_stretch' ? 'GRINDHOUSE' : strokeStyle === 'brush_scatter' ? 'WITCH_HOUSE' : undefined,
+            scatterGap: 1,
+            scatterWiggle: 0.5,
+            scatterSizeJitter: 0.3,
+            scatterAngularJitter: 10
+          }
+        });
+      });
+
+      updatePreview();
+    })();
+  </script>
+</body>
+</html>

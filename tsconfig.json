@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "ESNext",
+    "lib": ["ES2017"],
+    "strict": true,
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["@figma/plugin-typings"]
+  },
+  "include": ["code.ts"]
+}
