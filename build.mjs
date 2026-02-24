@@ -1,6 +1,6 @@
 /**
- * 1. Generate icon map and names from @material-design-icons/svg (build-icons.mjs)
- * 2. Merge into code.js = generated-icon-map.js + generated-icon-names.js + code-base.js
+ * 1. Generate icon map and names from lucide-static (build-icons.mjs)
+ * 2. Merge into code.js = generated-icon-map.js + generated-icon-names.js + generated-icon-map-stroke.js + code-base.js
  */
 import fs from 'fs';
 import path from 'path';
@@ -16,4 +16,4 @@ const iconNames = fs.readFileSync(path.join(__dirname, 'generated-icon-names.js'
 const iconMapStroke = fs.readFileSync(path.join(__dirname, 'generated-icon-map-stroke.js'), 'utf8');
 const codeBase = fs.readFileSync(path.join(__dirname, 'code-base.js'), 'utf8');
 fs.writeFileSync(path.join(__dirname, 'code.js'), iconMap + iconNames + iconMapStroke + codeBase, 'utf8');
-console.log('Built code.js with Material Symbols and stroke-only icon set.');
+console.log('Built code.js with Lucide Icons.');

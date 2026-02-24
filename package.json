@@ -1,7 +1,7 @@
 {
-  "name": "material-symbols-stylized-icons-plugin",
+  "name": "lucide-icons-figma-plugin",
   "version": "1.0.0",
-  "description": "Figma plugin to insert stylized Material Symbols icons",
+  "description": "Figma plugin to insert Lucide Icons (https://github.com/lucide-icons/lucide)",
   "scripts": {
     "build": "node build.mjs",
     "build:icons": "node build-icons.mjs",
@@ -9,7 +9,6 @@
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.100.0",
-    "@material-design-icons/svg": "latest",
     "lucide-static": "^0.575.0",
     "typescript": "^5.0.0"
   }
