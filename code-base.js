@@ -5,13 +5,33 @@
     return { r: c.r / 255, g: c.g / 255, b: c.b / 255 };
   }
 
+  var stretchBrushesLoaded = false;
+  async function ensureStretchBrushesLoaded() {
+    if (stretchBrushesLoaded) return;
+    await figma.loadBrushesAsync('STRETCH');
+    stretchBrushesLoaded = true;
+  }
+
+  var STRETCH_BRUSH_NAMES = ['HEIST', 'BIOPIC', 'EPIC', 'VERITE', 'PROPAGANDA'];
+  function isStretchBrush(name) {
+    return name && STRETCH_BRUSH_NAMES.indexOf(name) !== -1;
+  }
+
   async function applyIconStyle(node, payload) {
     var paint = { type: 'SOLID', color: rgbToFigma(payload.strokeColor), opacity: 1 };
-    // Lucide icons are stroke-based; use stroke only (fill off)
     node.strokeWeight = payload.strokeWeight != null ? payload.strokeWeight : 2;
     node.strokeAlign = 'CENTER';
     await node.setStrokesAsync([paint]);
     await node.setFillsAsync([]);
+    if (isStretchBrush(payload.strokeStyle)) {
+      await ensureStretchBrushesLoaded();
+      node.complexStrokeProperties = {
+        type: 'BRUSH',
+        brushType: 'STRETCH',
+        brushName: payload.strokeStyle,
+        direction: 'FORWARD'
+      };
+    }
   }
 
   async function insertIcon(payload) {
@@ -24,6 +44,9 @@
     }
 
     try {
+      if (isStretchBrush(payload.strokeStyle)) {
+        await ensureStretchBrushesLoaded();
+      }
       var frame = figma.createNodeFromSvg(svg);
       var vectors = frame.findAll(function(n) { return n.type === 'VECTOR'; });
 

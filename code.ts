@@ -5,15 +5,31 @@
 declare const __ICON_MAP__: Record<string, string>;
 declare const __ICON_MAP_STROKE__: Record<string, string>;
 
+type StretchBrushName = 'HEIST' | 'BIOPIC' | 'EPIC' | 'VERITE' | 'PROPAGANDA';
+
 interface InsertIconPayload {
   iconName: string;
   strokeWeight: number;
   strokeColor: { r: number; g: number; b: number };
   scale: number; // 12, 16, 20, 24 (display size)
+  strokeStyle?: string; // '' = basic, or StretchBrushName for brush
 }
 
 function rgbToFigma({ r, g, b }: { r: number; g: number; b: number }) {
   return { r: r / 255, g: g / 255, b: b / 255, a: 1 };
+}
+
+const STRETCH_BRUSH_NAMES: StretchBrushName[] = ['HEIST', 'BIOPIC', 'EPIC', 'VERITE', 'PROPAGANDA'];
+let stretchBrushesLoaded = false;
+
+async function ensureStretchBrushesLoaded(): Promise<void> {
+  if (stretchBrushesLoaded) return;
+  await figma.loadBrushesAsync('STRETCH');
+  stretchBrushesLoaded = true;
+}
+
+function isStretchBrush(name: string | undefined): name is StretchBrushName {
+  return !!name && STRETCH_BRUSH_NAMES.includes(name as StretchBrushName);
 }
 
 async function applyIconStyle(node: VectorNode, payload: InsertIconPayload): Promise<void> {
@@ -26,6 +42,15 @@ async function applyIconStyle(node: VectorNode, payload: InsertIconPayload): Pro
   node.strokeAlign = 'CENTER';
   await node.setStrokesAsync([paint]);
   await node.setFillsAsync([]);
+  if (isStretchBrush(payload.strokeStyle)) {
+    await ensureStretchBrushesLoaded();
+    node.complexStrokeProperties = {
+      type: 'BRUSH',
+      brushType: 'STRETCH',
+      brushName: payload.strokeStyle,
+      direction: 'FORWARD'
+    };
+  }
 }
 
 async function insertIcon(payload: InsertIconPayload): Promise<void> {
@@ -35,6 +60,9 @@ async function insertIcon(payload: InsertIconPayload): Promise<void> {
     return;
   }
 
+  if (isStretchBrush(payload.strokeStyle)) {
+    await ensureStretchBrushesLoaded();
+  }
   const frame = figma.createNodeFromSvg(svg) as FrameNode;
   const vectors = frame.findAll((n) => n.type === 'VECTOR') as VectorNode[];
 
