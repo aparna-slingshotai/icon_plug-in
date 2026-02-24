@@ -1,61 +1,35 @@
 /**
- * Figma Material Symbols Stylized Icons Plugin
- * __ICON_MAP__ and __ICON_MAP_STROKE__ are injected at build time by build.mjs
+ * Figma Lucide Icons Plugin
+ * __ICON_MAP__ and __ICON_MAP_STROKE__ are injected at build time by build.mjs (from lucide-static)
  */
 declare const __ICON_MAP__: Record<string, string>;
 declare const __ICON_MAP_STROKE__: Record<string, string>;
 
-type StrokeStyle = 'basic' | 'brush_stretch' | 'brush_scatter' | 'dynamic';
-type BrushStretchName = 'HEIST' | 'BLOCKBUSTER' | 'GRINDHOUSE' | 'BIOPIC' | 'NOIR' | 'VERITE' | 'NEW_WAVE';
-type BrushScatterName = 'WITCH_HOUSE' | 'SHOEGAZE' | 'DRONE' | 'BUBBLEGUM' | 'VAPORWAVE';
-
 interface InsertIconPayload {
   iconName: string;
-  style?: string; // outlined | rounded | sharp
-  weight?: number; // 100–700
-  grade?: string; // normal | simplified
-  fill?: 'on' | 'off';
   strokeWeight: number;
   strokeColor: { r: number; g: number; b: number };
-  strokeAlign: 'INSIDE' | 'CENTER' | 'OUTSIDE';
-  scale: number; // 12, 16, 20, 24 (optical size)
-  strokeStyle: StrokeStyle;
-  brushName?: BrushStretchName | BrushScatterName;
-  scatterGap?: number;
-  scatterWiggle?: number;
-  scatterSizeJitter?: number;
-  scatterAngularJitter?: number;
-  dynamicFrequency?: number;
-  dynamicWiggle?: number;
-  dynamicSmoothen?: number;
+  scale: number; // 12, 16, 20, 24 (display size)
 }
 
 function rgbToFigma({ r, g, b }: { r: number; g: number; b: number }) {
   return { r: r / 255, g: g / 255, b: b / 255, a: 1 };
 }
 
-function applyIconStyle(node: VectorNode, payload: InsertIconPayload): Promise<void> {
+async function applyIconStyle(node: VectorNode, payload: InsertIconPayload): Promise<void> {
   const paint: SolidPaint = {
     type: 'SOLID',
     color: rgbToFigma(payload.strokeColor),
     opacity: 1
   };
-  const useFill = payload.fill !== 'off';
-  if (useFill) {
-    return node.setFillsAsync([paint]).then(() => node.setStrokesAsync([]));
-  } else {
-    node.strokeWeight = payload.strokeWeight;
-    node.strokeAlign = 'CENTER';
-    return node.setStrokesAsync([paint]).then(() => node.setFillsAsync([]));
-  }
+  node.strokeWeight = payload.strokeWeight;
+  node.strokeAlign = 'CENTER';
+  await node.setStrokesAsync([paint]);
+  await node.setFillsAsync([]);
 }
 
 async function insertIcon(payload: InsertIconPayload): Promise<void> {
-  // When Fill=Off use stroke-based SVGs (Lucide) for true stroke-only vectors; otherwise Material fill-based
-  const useStrokeSource = payload.fill === 'off' && typeof __ICON_MAP_STROKE__ !== 'undefined';
-  const svg = useStrokeSource
-    ? __ICON_MAP_STROKE__?.[payload.iconName] ?? __ICON_MAP__?.[payload.iconName]
-    : __ICON_MAP__?.[payload.iconName];
+  const svg = __ICON_MAP_STROKE__?.[payload.iconName] ?? __ICON_MAP__?.[payload.iconName];
   if (!svg) {
     figma.notify('Icon not found: ' + payload.iconName);
     return;
@@ -72,8 +46,8 @@ async function insertIcon(payload: InsertIconPayload): Promise<void> {
   const scale = payload.scale / baseSize;
   frame.resize(frame.width * scale, frame.height * scale);
 
-  frame.x = figma.viewport.center.x - (frame.width / 2);
-  frame.y = figma.viewport.center.y - (frame.height / 2);
+  frame.x = figma.viewport.center.x - frame.width / 2;
+  frame.y = figma.viewport.center.y - frame.height / 2;
   figma.currentPage.appendChild(frame);
   figma.currentPage.selection = [frame];
   figma.viewport.scrollAndZoomIntoView([frame]);
@@ -82,7 +56,7 @@ async function insertIcon(payload: InsertIconPayload): Promise<void> {
 
 figma.showUI(__html__, { width: 560, height: 640, themeColors: true });
 
-figma.ui.onmessage = (msg: { type: string; payload?: InsertIconPayload; iconNames?: string[] }) => {
+figma.ui.onmessage = (msg: { type: string; payload?: InsertIconPayload }) => {
   if (msg.type === 'close') {
     figma.closePlugin();
   }

@@ -64,7 +64,7 @@
     }
     .icon-cell:hover { border-color: var(--figma-color-border-strong); background: var(--figma-color-bg-hover); }
     .icon-cell.selected { border-color: var(--figma-color-bg-brand); background: var(--figma-color-bg-brand-tertiary); }
-    .icon-cell svg { width: 20px; height: 20px; fill: currentColor; stroke: currentColor; stroke-width: 0.5; flex-shrink: 0; }
+    .icon-cell svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; flex-shrink: 0; }
     .preview-wrap {
       position: relative;
       border-radius: 8px;
@@ -88,7 +88,8 @@
     }
     .preview-wrap .preview-icon svg { width: 100%; height: 100%; display: block; }
     .preview-wrap .preview-icon svg path,
-    .preview-wrap .preview-icon svg circle { fill: currentColor; stroke: none; }
+    .preview-wrap .preview-icon svg circle,
+    .preview-wrap .preview-icon svg line { fill: none; stroke: currentColor; }
     .dark-toggle {
       position: absolute;
       top: 6px;
@@ -116,7 +117,7 @@
     .insert-row button { flex: 1; }
     .loading { color: var(--figma-color-text-secondary); padding: 8px; }
 
-    /* Material Symbols–style layout */
+    /* Lucide Icons layout */
     .ui-header {
       display: flex;
       align-items: center;
@@ -140,7 +141,7 @@
       align-items: center;
       justify-content: center;
       border-radius: 4px;
-      background: linear-gradient(135deg, #4285f4 0%, #ea4335 50%, #fbbc04 100%);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       color: #fff;
       font-size: 12px;
       font-weight: bold;
@@ -283,7 +284,7 @@
     .right-col .preview-wrap { min-height: 80px; }
     .right-col .preview-wrap .preview-icon { width: 40px; height: 40px; }
     .icon-cell .cell-svg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-    .icon-cell .cell-svg svg { width: 20px; height: 20px; fill: currentColor; stroke: currentColor; }
+    .icon-cell .cell-svg svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
     .banner {
       padding: 8px 10px;
       border-radius: 6px;
@@ -310,8 +311,8 @@
 <body>
   <header class="ui-header">
     <div class="ui-header-title">
-      <div class="ui-header-logo" title="Material Design">M</div>
-      <span>Material Symbols</span>
+      <div class="ui-header-logo" title="Lucide Icons">L</div>
+      <span>Lucide Icons</span>
     </div>
     <button type="button" class="ui-header-close" id="closeBtn" title="Close">×</button>
   </header>
@@ -319,68 +320,43 @@
   <div class="main-layout">
     <div class="left-col">
   <div id="limitedBanner" class="banner" style="display:none;">
-    <strong>Loading icons from Material Symbols.</strong> If the list is empty, check your network connection and try again.
+    <strong>No icons loaded.</strong> Run <code>npm run build</code> to generate the icon set from Lucide.
   </div>
 
   <div class="search-row">
-    <div class="style-select-wrap">
-      <label>Style</label>
-      <select id="styleSelect">
-        <option value="outlined" selected>Outlined</option>
-        <option value="rounded">Rounded</option>
-        <option value="sharp">Sharp</option>
-      </select>
-    </div>
-    <div class="search-wrap">
+    <div class="search-wrap" style="flex: 1;">
       <label for="search">Search</label>
       <div class="search-input-wrap">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" id="search" placeholder="Search symbols" />
+        <input type="text" id="search" placeholder="Search Lucide icons" />
       </div>
     </div>
   </div>
 
   <div class="filters-row">
     <div class="filter-group">
-      <label for="weightSelect">Weight</label>
-      <select id="weightSelect">
-        <option value="100">100</option>
-        <option value="200">200</option>
-        <option value="300">300</option>
-        <option value="400" selected>400</option>
-        <option value="500">500</option>
-        <option value="600">600</option>
-        <option value="700">700</option>
+      <label for="strokeWeightSelect">Stroke</label>
+      <select id="strokeWeightSelect">
+        <option value="1">1</option>
+        <option value="1.5">1.5</option>
+        <option value="2" selected>2</option>
       </select>
+      <span class="filter-hint">Stroke width</span>
     </div>
     <div class="filter-group">
-      <label for="gradeSelect">Grade</label>
-      <select id="gradeSelect">
-        <option value="normal" selected>Normal</option>
-        <option value="simplified">Simplified</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label for="fillSelect">Fill</label>
-      <select id="fillSelect">
-        <option value="off" selected>Off</option>
-        <option value="on">On</option>
-      </select>
-      <span class="filter-hint">Off = stroke-only outline</span>
-    </div>
-    <div class="filter-group">
-      <label for="opticalSelect">Optical size</label>
+      <label for="opticalSelect">Size</label>
       <select id="opticalSelect">
-        <option value="12">12dp</option>
-        <option value="16">16dp</option>
-        <option value="20">20dp</option>
-        <option value="24" selected>24dp</option>
+        <option value="12">12</option>
+        <option value="16">16</option>
+        <option value="20">20</option>
+        <option value="24" selected>24</option>
       </select>
+      <span class="filter-hint">Icon size (px)</span>
     </div>
   </div>
 
   <section class="icon-grid-wrap">
-    <span class="section-label">Symbols</span>
+    <span class="section-label">Icons</span>
     <div id="iconGrid" class="icon-grid">
       <div class="loading" id="gridLoading">Loading icons…</div>
     </div>
@@ -420,10 +396,7 @@
       const previewIcon = document.getElementById('previewIcon');
       const darkToggle = document.getElementById('darkToggle');
       const closeBtn = document.getElementById('closeBtn');
-      const styleSelect = document.getElementById('styleSelect');
-      const gradeSelect = document.getElementById('gradeSelect');
-      const weightSelect = document.getElementById('weightSelect');
-      const fillSelect = document.getElementById('fillSelect');
+      const strokeWeightSelect = document.getElementById('strokeWeightSelect');
       const opticalSelect = document.getElementById('opticalSelect');
       const strokeColor = document.getElementById('strokeColor');
       const insertBtn = document.getElementById('insertBtn');
@@ -432,7 +405,7 @@
       let selectedIconName = null;
       let selectedSvg = '';
       let darkMode = false;
-      var svgCache = {}; // key: iconName (style is requested per current styleSelect)
+      var svgCache = {}; // key: iconName
 
       const LIGHT_BG = '#ffffff';
       const DARK_BG = '#2d2d2d';
@@ -496,7 +469,7 @@
           previewIcon.innerHTML = '';
           return;
         }
-        // Material Symbols use path fill; preview shows shape in stroke color via currentColor
+        // Lucide icons use stroke; preview shows shape in stroke color via currentColor
         const svgStr = selectedSvg.replace(/<svg/i, '<svg style="width:100%;height:100%;display:block"');
         previewIcon.innerHTML = svgStr;
       }
@@ -534,10 +507,8 @@
         }
         if (msg.type === 'svg') {
           var name = msg.iconName;
-          var style = msg.style || 'outlined';
           var svg = msg.svg || '';
-          var key = name + '|' + style;
-          svgCache[key] = svg;
+          svgCache[name] = svg;
           var cell = document.querySelector('.icon-cell[data-name="' + name + '"]');
           if (cell) {
             var wrap = cell.querySelector('.cell-svg');
@@ -545,46 +516,39 @@
               wrap.innerHTML = svg ? (svg.replace(/<svg/i, '<svg style="width:20px;height:20px;display:block"')) : '';
             }
           }
-          if (name === selectedIconName && style === styleSelect.value) {
+          if (name === selectedIconName) {
             selectedSvg = svg;
             updatePreview();
           }
         }
       };
 
-      function getCurrentStyle() { return styleSelect ? styleSelect.value : 'outlined'; }
       function requestSvgForCell(iconName) {
-        var style = getCurrentStyle();
-        send({ type: 'getSvg', payload: { iconName: iconName, style: style } });
+        send({ type: 'getSvg', payload: { iconName: iconName } });
       }
       function requestSvgsForGrid(iconNames) {
-        var style = getCurrentStyle();
         iconNames.forEach(function(name) {
-          var key = name + '|' + style;
-          if (svgCache[key]) return;
-          send({ type: 'getSvg', payload: { iconName: name, style: style } });
+          if (svgCache[name]) return;
+          send({ type: 'getSvg', payload: { iconName: name } });
         });
       }
 
       function renderGrid(names) {
         iconGrid.innerHTML = '';
-        var style = getCurrentStyle();
         var list = names.slice(0, 80);
         list.forEach(function(name) {
           var cell = document.createElement('div');
           cell.className = 'icon-cell' + (name === selectedIconName ? ' selected' : '');
           cell.dataset.name = name;
-          var key = name + '|' + style;
-          var cached = svgCache[key];
+          var cached = svgCache[name];
           var svgHtml = cached ? cached.replace(/<svg/i, '<svg style="width:20px;height:20px;display:block"') : '';
           cell.innerHTML = '<div class="cell-svg">' + svgHtml + '</div>';
           cell.addEventListener('click', function() {
             document.querySelectorAll('.icon-cell.selected').forEach(function(c) { c.classList.remove('selected'); });
             cell.classList.add('selected');
             selectedIconName = name;
-            var key = name + '|' + getCurrentStyle();
-            if (svgCache[key]) {
-              selectedSvg = svgCache[key];
+            if (svgCache[name]) {
+              selectedSvg = svgCache[name];
               updatePreview();
             } else {
               requestSvgForCell(name);
@@ -610,11 +574,6 @@
       searchEl.addEventListener('input', runSearch);
       searchEl.addEventListener('keyup', runSearch);
 
-      styleSelect.addEventListener('change', function() {
-        runSearch();
-        if (selectedIconName) requestSvgForCell(selectedIconName);
-      });
-
       closeBtn.addEventListener('click', function() {
         send({ type: 'close' });
       });
@@ -635,28 +594,18 @@
           return;
         }
         var scale = parseInt(opticalSelect.value, 10) || 24;
-        var weight = parseInt(weightSelect.value, 10) || 400;
+        var strokeWeight = parseFloat(strokeWeightSelect ? strokeWeightSelect.value : '2') || 2;
         var rgb = hexToRgb(strokeColor.value);
         send({
           type: 'insert',
           payload: {
             iconName: selectedIconName,
-            style: getCurrentStyle(),
-            weight: weight,
-            grade: gradeSelect ? gradeSelect.value : 'normal',
-            fill: fillSelect ? fillSelect.value : 'off',
-            strokeWeight: weightToStrokeWeight(weight),
+            strokeWeight: strokeWeight,
             strokeColor: rgb,
-            strokeAlign: 'CENTER',
-            scale: scale,
-            strokeStyle: 'basic'
+            scale: scale
           }
         });
       });
-      function weightToStrokeWeight(w) {
-        var map = { 100: 0.5, 200: 0.75, 300: 1, 400: 1.25, 500: 1.5, 600: 1.75, 700: 2 };
-        return map[w] != null ? map[w] : 1.25;
-      }
 
       updatePreview();
     })();
