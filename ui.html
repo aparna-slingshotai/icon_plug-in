@@ -6,6 +6,7 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
+      padding: 24px;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 11px;
       color: var(--figma-color-text);
@@ -316,8 +317,8 @@
 <body>
   <header class="ui-header">
     <div class="ui-header-title">
-      <div class="ui-header-logo" title="Lucide Icons">L</div>
-      <span>Lucide Icons</span>
+      <div class="ui-header-logo" title="Ash Icon Studio">L</div>
+      <span>Ash Icon Studio</span>
     </div>
     <button type="button" class="ui-header-close" id="closeBtn" title="Close">×</button>
   </header>
@@ -333,7 +334,7 @@
       <label for="search">Search</label>
       <div class="search-input-wrap">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" id="search" placeholder="Search Lucide icons" />
+        <input type="text" id="search" placeholder="Search Ash icons" />
       </div>
     </div>
   </div>
@@ -355,6 +356,13 @@
         <option value="16">16</option>
         <option value="20">20</option>
         <option value="24" selected>24</option>
+        <option value="32">32</option>
+        <option value="40">40</option>
+        <option value="48">48</option>
+        <option value="64">64</option>
+        <option value="80">80</option>
+        <option value="96">96</option>
+        <option value="128">128</option>
       </select>
       <span class="filter-hint">Icon size (px)</span>
     </div>
@@ -428,6 +436,7 @@
       let selectedSvg = '';
       let darkMode = false;
       var svgCache = {}; // key: iconName
+      var insertReenableTimeoutId = null;
 
       const LIGHT_BG = '#ffffff';
       const DARK_BG = '#2d2d2d';
@@ -477,6 +486,36 @@
         parent.postMessage({ pluginMessage: msg }, '*');
       }
 
+      function triggerInsert() {
+        if (!selectedIconName) {
+          alert('Select an icon first.');
+          return;
+        }
+        if (insertBtn.disabled) return;
+        insertBtn.disabled = true;
+        insertBtn.textContent = 'Inserting…';
+        if (insertReenableTimeoutId) clearTimeout(insertReenableTimeoutId);
+        insertReenableTimeoutId = setTimeout(function() {
+          insertReenableTimeoutId = null;
+          insertBtn.disabled = false;
+          insertBtn.textContent = 'Insert on canvas';
+        }, 3000);
+        var scale = parseInt(opticalSelect.value, 10) || 24;
+        var strokeWeight = parseFloat(strokeWeightSelect ? strokeWeightSelect.value : '2') || 2;
+        var strokeStyle = strokeStyleSelect ? strokeStyleSelect.value : '';
+        var rgb = hexToRgb(strokeColor.value);
+        send({
+          type: 'insert',
+          payload: {
+            iconName: selectedIconName,
+            strokeWeight: strokeWeight,
+            strokeColor: rgb,
+            scale: scale,
+            strokeStyle: strokeStyle
+          }
+        });
+      }
+
       function hexToRgb(hex) {
         const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
         return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : { r: 150, g: 135, b: 181 };
@@ -501,6 +540,7 @@
         var svgStr = selectedSvg.replace(/<svg/i, '<svg style="width:100%;height:100%;display:block"');
         svgStr = svgStr.replace(/stroke-width="[^"]*"/i, 'stroke-width="' + strokeW + '"');
         if (!/stroke-width=/i.test(svgStr)) svgStr = svgStr.replace(/<svg/i, '<svg stroke-width="' + strokeW + '"');
+        svgStr = svgStr.replace(/stroke="currentColor"/gi, 'stroke="' + color + '"');
         previewIcon.innerHTML = svgStr;
       }
 
@@ -513,14 +553,43 @@
 
       strokeColor.addEventListener('input', onStrokeColorChange);
       strokeColor.addEventListener('change', onStrokeColorChange);
-      if (opticalSelect) opticalSelect.addEventListener('change', updatePreview);
-      if (strokeWeightSelect) strokeWeightSelect.addEventListener('change', updatePreview);
+      if (opticalSelect) {
+        opticalSelect.addEventListener('change', updatePreview);
+        opticalSelect.addEventListener('input', updatePreview);
+      }
+      if (strokeWeightSelect) {
+        strokeWeightSelect.addEventListener('change', updatePreview);
+        strokeWeightSelect.addEventListener('input', updatePreview);
+      }
+      if (strokeStyleSelect) {
+        strokeStyleSelect.addEventListener('change', function() {
+          updatePreview();
+          var val = strokeStyleSelect.value;
+          if (val) {
+            send({ type: 'preloadBrushes', payload: { strokeStyle: val } });
+          }
+        });
+        strokeStyleSelect.addEventListener('input', function() {
+          updatePreview();
+          var val = strokeStyleSelect.value;
+          if (val) {
+            send({ type: 'preloadBrushes', payload: { strokeStyle: val } });
+          }
+        });
+      }
 
       send({ type: 'getIconNames' });
 
       window.onmessage = function(ev) {
         const msg = ev.data.pluginMessage;
         if (!msg) return;
+        if (msg.type === 'insertDone') {
+          if (insertReenableTimeoutId) clearTimeout(insertReenableTimeoutId);
+          insertReenableTimeoutId = null;
+          insertBtn.disabled = false;
+          insertBtn.textContent = 'Insert on canvas';
+          return;
+        }
         if (msg.type === 'iconNames') {
           allIconNames = msg.iconNames || [];
           if (gridLoading.parentNode) gridLoading.remove();
@@ -583,6 +652,8 @@
               selectedSvg = svgCache[name];
               updatePreview();
             } else {
+              selectedSvg = '';
+              updatePreview();
               requestSvgForCell(name);
             }
           });
@@ -621,26 +692,10 @@
       }
 
       if (strokeStyleSelect) strokeStyleSelect.addEventListener('change', updatePreview);
+      if (strokeStyleSelect) strokeStyleSelect.addEventListener('input', updatePreview);
 
       insertBtn.addEventListener('click', function() {
-        if (!selectedIconName) {
-          alert('Select an icon first.');
-          return;
-        }
-        var scale = parseInt(opticalSelect.value, 10) || 24;
-        var strokeWeight = parseFloat(strokeWeightSelect ? strokeWeightSelect.value : '2') || 2;
-        var strokeStyle = strokeStyleSelect ? strokeStyleSelect.value : '';
-        var rgb = hexToRgb(strokeColor.value);
-        send({
-          type: 'insert',
-          payload: {
-            iconName: selectedIconName,
-            strokeWeight: strokeWeight,
-            strokeColor: rgb,
-            scale: scale,
-            strokeStyle: strokeStyle
-          }
-        });
+        triggerInsert();
       });
 
       updatePreview();

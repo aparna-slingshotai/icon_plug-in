@@ -5,6 +5,38 @@
     return { r: c.r / 255, g: c.g / 255, b: c.b / 255 };
   }
 
+  function rgbToHex(c) {
+    function h(n) {
+      var s = Math.max(0, Math.min(255, n | 0)).toString(16);
+      return s.length === 1 ? '0' + s : s;
+    }
+    return '#' + h(c.r) + h(c.g) + h(c.b);
+  }
+
+  function patchSvgForStyle(svg, payload) {
+    // Prefer baking stroke style into SVG to avoid per-node async styling work.
+    var hex = rgbToHex(payload.strokeColor || { r: 0, g: 0, b: 0 });
+    var w = String(payload.strokeWeight != null ? payload.strokeWeight : 2);
+
+    var out = svg;
+
+    // Ensure root <svg> has desired stroke + stroke-width (override if present).
+    out = out.replace(/<svg\b([^>]*)>/, function(match, attrs) {
+      var a = attrs || '';
+      if (/stroke="[^"]*"/.test(a)) a = a.replace(/stroke="[^"]*"/, 'stroke="' + hex + '"');
+      else a += ' stroke="' + hex + '"';
+
+      if (/stroke-width="[^"]*"/.test(a)) a = a.replace(/stroke-width="[^"]*"/, 'stroke-width="' + w + '"');
+      else a += ' stroke-width="' + w + '"';
+
+      return '<svg' + a + '>';
+    });
+
+    // Some SVGs may also specify stroke on children; normalize common Lucide pattern.
+    out = out.replace(/stroke="currentColor"/g, 'stroke="' + hex + '"');
+    return out;
+  }
+
   var stretchBrushesLoaded = false;
   async function ensureStretchBrushesLoaded() {
     if (stretchBrushesLoaded) return;
@@ -17,23 +49,6 @@
     return name && STRETCH_BRUSH_NAMES.indexOf(name) !== -1;
   }
 
-  async function applyIconStyle(node, payload) {
-    var paint = { type: 'SOLID', color: rgbToFigma(payload.strokeColor), opacity: 1 };
-    node.strokeWeight = payload.strokeWeight != null ? payload.strokeWeight : 2;
-    node.strokeAlign = 'CENTER';
-    await node.setStrokesAsync([paint]);
-    await node.setFillsAsync([]);
-    if (isStretchBrush(payload.strokeStyle)) {
-      await ensureStretchBrushesLoaded();
-      node.complexStrokeProperties = {
-        type: 'BRUSH',
-        brushType: 'STRETCH',
-        brushName: payload.strokeStyle,
-        direction: 'FORWARD'
-      };
-    }
-  }
-
   async function insertIcon(payload) {
     var svg = (typeof __ICON_MAP_STROKE__ !== 'undefined' && __ICON_MAP_STROKE__[payload.iconName])
       ? __ICON_MAP_STROKE__[payload.iconName]
@@ -44,14 +59,23 @@
     }
 
     try {
-      if (isStretchBrush(payload.strokeStyle)) {
-        await ensureStretchBrushesLoaded();
-      }
-      var frame = figma.createNodeFromSvg(svg);
+      var useBrush = isStretchBrush(payload.strokeStyle);
+      if (useBrush) await ensureStretchBrushesLoaded();
+
+      var styledSvg = patchSvgForStyle(svg, payload);
+      var frame = figma.createNodeFromSvg(styledSvg);
       var vectors = frame.findAll(function(n) { return n.type === 'VECTOR'; });
 
       for (var i = 0; i < vectors.length; i++) {
-        await applyIconStyle(vectors[i], payload);
+        vectors[i].strokeAlign = 'CENTER';
+        if (useBrush) {
+          vectors[i].complexStrokeProperties = {
+            type: 'BRUSH',
+            brushType: 'STRETCH',
+            brushName: payload.strokeStyle,
+            direction: 'FORWARD'
+          };
+        }
       }
 
       var baseSize = 24;
@@ -71,13 +95,26 @@
 
   figma.showUI(__html__, { width: 560, height: 640, themeColors: true });
 
+  // Start loading brushes immediately so first insert with a brush is fast
+  ensureStretchBrushesLoaded().catch(function() {});
+
   figma.ui.onmessage = async function(msg) {
     if (msg.type === 'close') {
       figma.closePlugin();
       return;
     }
     if (msg.type === 'insert' && msg.payload) {
-      await insertIcon(msg.payload);
+      try {
+        await insertIcon(msg.payload);
+      } finally {
+        figma.ui.postMessage({ type: 'insertDone' });
+      }
+      return;
+    }
+    if (msg.type === 'preloadBrushes' && msg.payload && msg.payload.strokeStyle) {
+      if (isStretchBrush(msg.payload.strokeStyle)) {
+        await ensureStretchBrushesLoaded();
+      }
       return;
     }
     if (msg.type === 'getIconNames') {
