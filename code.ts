@@ -1,8 +1,9 @@
 /**
  * Figma Material Symbols Stylized Icons Plugin
- * Icon map __ICON_MAP__ is injected at build time by build.mjs
+ * __ICON_MAP__ and __ICON_MAP_STROKE__ are injected at build time by build.mjs
  */
 declare const __ICON_MAP__: Record<string, string>;
+declare const __ICON_MAP_STROKE__: Record<string, string>;
 
 type StrokeStyle = 'basic' | 'brush_stretch' | 'brush_scatter' | 'dynamic';
 type BrushStretchName = 'HEIST' | 'BLOCKBUSTER' | 'GRINDHOUSE' | 'BIOPIC' | 'NOIR' | 'VERITE' | 'NEW_WAVE';
@@ -10,10 +11,14 @@ type BrushScatterName = 'WITCH_HOUSE' | 'SHOEGAZE' | 'DRONE' | 'BUBBLEGUM' | 'VA
 
 interface InsertIconPayload {
   iconName: string;
+  style?: string; // outlined | rounded | sharp
+  weight?: number; // 100–700
+  grade?: string; // normal | simplified
+  fill?: 'on' | 'off';
   strokeWeight: number;
   strokeColor: { r: number; g: number; b: number };
   strokeAlign: 'INSIDE' | 'CENTER' | 'OUTSIDE';
-  scale: number; // 12, 16, 20, 24
+  scale: number; // 12, 16, 20, 24 (optical size)
   strokeStyle: StrokeStyle;
   brushName?: BrushStretchName | BrushScatterName;
   scatterGap?: number;
@@ -29,94 +34,38 @@ function rgbToFigma({ r, g, b }: { r: number; g: number; b: number }) {
   return { r: r / 255, g: g / 255, b: b / 255, a: 1 };
 }
 
-async function applyStrokeStyle(
-  node: VectorNode,
-  payload: InsertIconPayload,
-  brushesLoaded: boolean
-): Promise<void> {
-  const strokePaint: SolidPaint = {
+function applyIconStyle(node: VectorNode, payload: InsertIconPayload): Promise<void> {
+  const paint: SolidPaint = {
     type: 'SOLID',
     color: rgbToFigma(payload.strokeColor),
     opacity: 1
   };
-
-  try {
-    switch (payload.strokeStyle) {
-      case 'brush_stretch':
-        if (brushesLoaded && payload.brushName) {
-          (node as any).complexStrokeProperties = {
-            type: 'BRUSH',
-            brushType: 'STRETCH',
-            brushName: payload.brushName,
-            direction: 'FORWARD'
-          };
-        } else {
-          (node as any).complexStrokeProperties = { type: 'BASIC' };
-        }
-        break;
-      case 'brush_scatter':
-        if (brushesLoaded && payload.brushName) {
-          (node as any).complexStrokeProperties = {
-            type: 'BRUSH',
-            brushType: 'SCATTER',
-            brushName: payload.brushName,
-            gap: payload.scatterGap ?? 1,
-            wiggle: payload.scatterWiggle ?? 0,
-            sizeJitter: payload.scatterSizeJitter ?? 0,
-            angularJitter: payload.scatterAngularJitter ?? 0,
-            rotation: 0
-          };
-        } else {
-          (node as any).complexStrokeProperties = { type: 'BASIC' };
-        }
-        break;
-      case 'dynamic':
-        (node as any).complexStrokeProperties = {
-          type: 'DYNAMIC',
-          frequency: payload.dynamicFrequency ?? 2,
-          wiggle: payload.dynamicWiggle ?? 2,
-          smoothen: payload.dynamicSmoothen ?? 0.5
-        };
-        break;
-      default:
-        (node as any).complexStrokeProperties = { type: 'BASIC' };
-    }
-
+  const useFill = payload.fill !== 'off';
+  if (useFill) {
+    return node.setFillsAsync([paint]).then(() => node.setStrokesAsync([]));
+  } else {
     node.strokeWeight = payload.strokeWeight;
-    node.strokeAlign = payload.strokeAlign;
-    await node.setStrokesAsync([strokePaint]);
-    await node.setFillsAsync([]); // stroke-based only
-  } catch {
-    (node as any).complexStrokeProperties = { type: 'BASIC' };
-    node.strokeWeight = payload.strokeWeight;
-    node.strokeAlign = payload.strokeAlign;
-    await node.setStrokesAsync([strokePaint]);
-    await node.setFillsAsync([]);
+    node.strokeAlign = 'CENTER';
+    return node.setStrokesAsync([paint]).then(() => node.setFillsAsync([]));
   }
 }
 
 async function insertIcon(payload: InsertIconPayload): Promise<void> {
-  const svg = __ICON_MAP__?.[payload.iconName];
+  // When Fill=Off use stroke-based SVGs (Lucide) for true stroke-only vectors; otherwise Material fill-based
+  const useStrokeSource = payload.fill === 'off' && typeof __ICON_MAP_STROKE__ !== 'undefined';
+  const svg = useStrokeSource
+    ? __ICON_MAP_STROKE__?.[payload.iconName] ?? __ICON_MAP__?.[payload.iconName]
+    : __ICON_MAP__?.[payload.iconName];
   if (!svg) {
     figma.notify('Icon not found: ' + payload.iconName);
     return;
-  }
-
-  let brushesLoaded = false;
-  if (payload.strokeStyle === 'brush_stretch' || payload.strokeStyle === 'brush_scatter') {
-    try {
-      await figma.loadBrushesAsync();
-      brushesLoaded = true;
-    } catch (_) {
-      figma.notify('Could not load brushes; using basic stroke.');
-    }
   }
 
   const frame = figma.createNodeFromSvg(svg) as FrameNode;
   const vectors = frame.findAll((n) => n.type === 'VECTOR') as VectorNode[];
 
   for (const node of vectors) {
-    await applyStrokeStyle(node, payload, brushesLoaded);
+    await applyIconStyle(node, payload);
   }
 
   const baseSize = 24;
@@ -131,9 +80,12 @@ async function insertIcon(payload: InsertIconPayload): Promise<void> {
   figma.notify('Icon inserted');
 }
 
-figma.showUI(__html__, { width: 420, height: 560, themeColors: true });
+figma.showUI(__html__, { width: 560, height: 640, themeColors: true });
 
 figma.ui.onmessage = (msg: { type: string; payload?: InsertIconPayload; iconNames?: string[] }) => {
+  if (msg.type === 'close') {
+    figma.closePlugin();
+  }
   if (msg.type === 'insert' && msg.payload) {
     insertIcon(msg.payload);
   }

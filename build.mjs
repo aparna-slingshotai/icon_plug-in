@@ -13,6 +13,7 @@ execSync('node build-icons.mjs', { cwd: __dirname, stdio: 'inherit' });
 
 const iconMap = fs.readFileSync(path.join(__dirname, 'generated-icon-map.js'), 'utf8');
 const iconNames = fs.readFileSync(path.join(__dirname, 'generated-icon-names.js'), 'utf8');
+const iconMapStroke = fs.readFileSync(path.join(__dirname, 'generated-icon-map-stroke.js'), 'utf8');
 const codeBase = fs.readFileSync(path.join(__dirname, 'code-base.js'), 'utf8');
-fs.writeFileSync(path.join(__dirname, 'code.js'), iconMap + iconNames + codeBase, 'utf8');
-console.log('Built code.js with full Material Symbols set (offline).');
+fs.writeFileSync(path.join(__dirname, 'code.js'), iconMap + iconNames + iconMapStroke + codeBase, 'utf8');
+console.log('Built code.js with Material Symbols and stroke-only icon set.');
