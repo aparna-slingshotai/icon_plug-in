@@ -1,9 +1,12 @@
 {
   "name": "Ash Icon Studio",
-  "id": "lucide-icons",
+  "id": "1608897829329825473",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
   "documentAccess": "dynamic-page",
-  "editorType": ["figma"]
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
 }

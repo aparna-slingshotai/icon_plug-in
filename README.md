@@ -41,7 +41,24 @@ To publish as a **Figma Community plugin**:
 2. Replace the plugin’s `manifest.json`, `code.js`, and `ui.html` with the ones from this repo (after running `npm run build` if you want the full icon set).
 3. Use **Publish** (or **Submit to Community**) from the plugin’s menu in Figma and follow the prompts. You may need to set the plugin **id** in `manifest.json` to the one Figma assigns when you create the plugin.
 
-For **organization/private** use, install via **Plugins → Development → Import plugin from manifest** and optionally restrict to your org in your Figma admin settings.
+## Share with your Figma organization
+
+**Requirement:** Your Figma account must be on an **Organization or Enterprise** plan.
+
+1. **Create the plugin in Figma (one-time)**  
+   In the **Figma desktop app**: **Plugins → Development → New Plugin**. Choose “Empty” or any template, then replace its files with yours: copy in `manifest.json`, `code.js`, and `ui.html` from this repo (after `npm run build`). If Figma gave the plugin an **id**, set that same `id` in your `manifest.json`.
+
+2. **Publish as a private org plugin**  
+   In the plugin’s menu (three dots or right‑click the plugin): **Publish** (or **Submit to Community**). In the publish flow:
+   - Fill in name, description, tagline, and any images.
+   - On **“Add the final details”**, set **Publish to** to **your organization** (not Community).  
+   Private org plugins **skip Community review** and are available to your org right away.
+
+3. **How others in your org get it**  
+   Colleagues go to the file browser → **All teams** or **All workspaces** → **Plugins**, then find the plugin and click **Save** to add it to their account.  
+   Admins can also [approve and install plugins for the organization](https://help.figma.com/hc/articles/4404239054127).
+
+**Alternative (no publish):** Share the plugin folder (e.g. via Git or zip). Others use **Plugins → Development → Import plugin from manifest…** and select your `manifest.json`. This installs it only for them as a development plugin.
 
 ## Project structure
 
